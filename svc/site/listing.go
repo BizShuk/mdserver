@@ -101,6 +101,16 @@ func (s *Site) buildListing(target Target) ([]Entry, error) {
 				Date:    meta.Date,
 				ModTime: info.ModTime(),
 			})
+		case isHTMLName(name):
+			// The extension stays in the name and the URL: it is what tells a
+			// reader this row is served as-is, and it keeps report.html from
+			// colliding with report.md in the listing.
+			entries = append(entries, Entry{
+				Name:    name,
+				URL:     escapeSegment(name),
+				Title:   ReadPageMeta(fsPath).Title,
+				ModTime: info.ModTime(),
+			})
 		}
 	}
 
@@ -113,8 +123,9 @@ func (s *Site) buildListing(target Target) ([]Entry, error) {
 	return entries, nil
 }
 
-// countPages counts markdown files under dir, recursively, ignoring hidden
-// directories.
+// countPages counts the pages under dir, recursively, ignoring hidden
+// directories. HTML files count too, so a directory holding only an export is
+// still listed by its parent.
 func countPages(dir string) (int, error) {
 	count := 0
 	err := filepath.WalkDir(dir, func(walkPath string, d fs.DirEntry, err error) error {
@@ -128,7 +139,10 @@ func countPages(dir string) (int, error) {
 			}
 			return nil
 		}
-		if strings.EqualFold(filepath.Ext(name), MD_EXTENSION) && !strings.HasPrefix(name, ".") {
+		if strings.HasPrefix(name, ".") {
+			return nil
+		}
+		if strings.EqualFold(filepath.Ext(name), MD_EXTENSION) || isHTMLName(name) {
 			count++
 			if count >= MAX_COUNT_WALK {
 				return fs.SkipAll

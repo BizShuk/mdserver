@@ -15,8 +15,13 @@ import (
 	"strings"
 )
 
-// MD_EXTENSION is the only extension treated as a page.
+// MD_EXTENSION is the extension that is converted to HTML before serving.
 const MD_EXTENSION = ".md"
+
+// HTML_EXTENSIONS are served exactly as they are on disk: an HTML file is
+// already the output format, so it is never put through the markdown pipeline
+// or wrapped in the page template.
+var HTML_EXTENSIONS = []string{".html", ".htm"}
 
 // INDEX_FILENAMES stand in for the directory that contains them, in priority
 // order.
@@ -132,6 +137,20 @@ func (s *Site) Resolve(urlPath string) (Target, error) {
 		}, nil
 	}
 
+	// `/report` also finds report.html, but markdown keeps priority so the
+	// extensionless URL of a page never changes meaning when an export lands
+	// next to it. The file is still served as-is, not rendered.
+	for _, ext := range HTML_EXTENSIONS {
+		if htmlPath := fsPath + ext; isFile(htmlPath) {
+			return Target{
+				Kind:    KIND_STATIC,
+				FSPath:  htmlPath,
+				RelPath: rel + ext,
+				URLPath: clean,
+			}, nil
+		}
+	}
+
 	info, err := os.Stat(fsPath)
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
@@ -197,6 +216,18 @@ func canonicalPageURL(clean string) string {
 func hasHiddenSegment(rel string) bool {
 	for _, segment := range strings.Split(rel, "/") {
 		if strings.HasPrefix(segment, ".") && segment != "" {
+			return true
+		}
+	}
+	return false
+}
+
+// isHTMLName reports whether a filename is served as-is rather than rendered.
+// It takes a bare name or a full path.
+func isHTMLName(name string) bool {
+	ext := filepath.Ext(name)
+	for _, candidate := range HTML_EXTENSIONS {
+		if strings.EqualFold(ext, candidate) {
 			return true
 		}
 	}

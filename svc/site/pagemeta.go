@@ -26,6 +26,53 @@ type PageMeta struct {
 // Unreadable files yield a zero PageMeta rather than an error, since a listing
 // is more useful with a blank row than with none.
 func ReadPageMeta(fsPath string) PageMeta {
+	if isHTMLName(fsPath) {
+		return readHTMLMeta(fsPath)
+	}
+	return readMarkdownMeta(fsPath)
+}
+
+// readHTMLMeta takes an HTML file's title from its <title> element. The file is
+// never parsed beyond that: it is served as-is, so this is only for the label
+// a listing shows.
+func readHTMLMeta(fsPath string) PageMeta {
+	file, err := os.Open(fsPath)
+	if err != nil {
+		return PageMeta{}
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
+
+	// <title> may be split across lines, so accumulate until the closing tag
+	// shows up rather than matching a single line.
+	var head strings.Builder
+	for lines := 0; lines < MAX_META_LINES && scanner.Scan(); lines++ {
+		head.WriteString(scanner.Text())
+		head.WriteString(" ")
+		text := head.String()
+		lower := strings.ToLower(text)
+
+		open := strings.Index(lower, "<title")
+		if open < 0 {
+			continue
+		}
+		start := strings.Index(text[open:], ">")
+		if start < 0 {
+			continue
+		}
+		start += open + 1
+		end := strings.Index(lower[start:], "</title>")
+		if end < 0 {
+			continue
+		}
+		return PageMeta{Title: strings.TrimSpace(text[start : start+end])}
+	}
+	return PageMeta{}
+}
+
+func readMarkdownMeta(fsPath string) PageMeta {
 	file, err := os.Open(fsPath)
 	if err != nil {
 		return PageMeta{}
