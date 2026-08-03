@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ if .Title }}{{ .Title }} · {{ end }}{{ .SiteTitle }}</title>
+{{ with .Description }}<meta name="description" content="{{ . }}">{{ end }}
+<link rel="stylesheet" href="{{ .AssetPrefix }}style.css">
+<link rel="stylesheet" href="{{ .AssetPrefix }}syntax.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='13' font-size='14'>📄</text></svg>">
+</head>
+<body>
+<a class="skip-link" href="#content">Skip to content</a>
+
+<header class="topbar">
+  <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">☰</button>
+  <a class="site-title" href="/">{{ .SiteTitle }}</a>
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    {{ range .Breadcrumbs }}<span class="crumb-sep">/</span>{{ if .URL }}<a href="{{ .URL }}">{{ .Name }}</a>{{ else }}<span aria-current="page">{{ .Name }}</span>{{ end }}{{ end }}
+  </nav>
+</header>
+
+<div class="layout">
+  <aside class="sidebar" id="sidebar">
+    {{ with .SidebarTitle }}<p class="sidebar-heading">{{ . }}</p>{{ end }}
+    <nav aria-label="Directory">
+      <ul class="nav-list">
+        {{ if .ParentURL }}<li><a class="nav-up" href="{{ .ParentURL }}">../</a></li>{{ end }}
+        {{ range .Siblings }}
+        <li>
+          <a class="{{ if .Current }}current{{ end }}" href="{{ .URL }}">
+            <span class="nav-icon">{{ if .IsDir }}📁{{ else }}📄{{ end }}</span>
+            <span class="nav-name">{{ .Label }}</span>
+            {{ if .IsDir }}<span class="nav-count">{{ .PageCount }}</span>{{ end }}
+          </a>
+        </li>
+        {{ else }}
+        <li class="nav-empty">No pages here</li>
+        {{ end }}
+      </ul>
+    </nav>
+  </aside>
+
+  <main id="content">
+    {{ if .Error }}
+    <div class="error-page">
+      <h1>{{ .Error.Status }}</h1>
+      <p>{{ .Error.Message }}</p>
+      <p><a href="/">Back to {{ .SiteTitle }}</a></p>
+    </div>
+    {{ else }}
+
+    {{ if .IsDir }}
+    <div class="dir-header">
+      <h1>{{ if .Title }}{{ .Title }}{{ else }}{{ .DirName }}{{ end }}</h1>
+      <p class="dir-meta">{{ .EntryCount }} {{ if eq .EntryCount 1 }}entry{{ else }}entries{{ end }}</p>
+    </div>
+    {{ end }}
+
+    {{ with .Content }}<article class="markdown-body">{{ . }}</article>{{ end }}
+
+    {{ if .Entries }}
+    <section class="listing" aria-label="Directory contents">
+      <ul class="listing-grid">
+        {{ range .Entries }}
+        <li class="{{ if .IsDir }}is-dir{{ else }}is-page{{ end }}">
+          <a href="{{ .URL }}">
+            <span class="listing-icon">{{ if .IsDir }}📁{{ else }}📄{{ end }}</span>
+            <span class="listing-body">
+              <span class="listing-name">{{ if .Title }}{{ .Title }}{{ else }}{{ .Name }}{{ end }}</span>
+              <span class="listing-sub">
+                {{ if .IsDir }}{{ .PageCount }} pages{{ else }}{{ .Name }}{{ end }}
+                {{ with .Date }}<span class="listing-date">{{ . }}</span>{{ end }}
+              </span>
+            </span>
+          </a>
+        </li>
+        {{ end }}
+      </ul>
+    </section>
+    {{ end }}
+
+    {{ end }}
+  </main>
+
+  {{ if .TOC }}
+  <aside class="toc" aria-label="On this page">
+    <p class="sidebar-heading">On this page</p>
+    <ul>
+      {{ range .TOC }}<li class="toc-level-{{ .Level }}"><a href="#{{ .ID }}">{{ .Text }}</a></li>{{ end }}
+    </ul>
+  </aside>
+  {{ end }}
+</div>
+
+<footer class="footer">
+  {{ with .SourcePath }}<span class="source">{{ . }}</span>{{ end }}
+  {{ with .ModTime }}<span class="modtime">modified {{ . }}</span>{{ end }}
+  <span class="brand">mdserver</span>
+</footer>
+
+{{ if .HasMermaid }}<script src="{{ .AssetPrefix }}mermaid.min.js"></script>{{ end }}
+<script src="{{ .AssetPrefix }}app.js" defer></script>
+</body>
+</html>
