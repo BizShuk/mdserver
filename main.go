@@ -49,6 +49,7 @@ func main() {
 func run() error {
 	var (
 		addrFlag  = flag.String("addr", "", "listen address, e.g. :8080 or 127.0.0.1:3000")
+		portFlag  = flag.Int("port", 0, "listen port (overrides -addr; default: first free port from 8080)")
 		rootFlag  = flag.String("root", ".", "directory to serve")
 		titleFlag = flag.String("title", "", "site title (defaults to the directory name)")
 		quietFlag = flag.Bool("quiet", false, "only log warnings and errors")
@@ -81,7 +82,11 @@ func run() error {
 		return err
 	}
 
-	listener, err := listen(*addrFlag)
+	listenAddr := *addrFlag
+	if *portFlag != 0 {
+		listenAddr = ":" + strconv.Itoa(*portFlag)
+	}
+	listener, err := listen(listenAddr)
 	if err != nil {
 		return err
 	}

@@ -1,0 +1,4 @@
+interface:
+  display_name: "mdserver Markdown Preview"
+  short_description: "Serve Markdown with explicit port control"
+  default_prompt: "Use $mdserver to preview a Markdown directory on a safe, verified local address."
