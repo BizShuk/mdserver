@@ -1,0 +1,15 @@
+{
+  "name": "mdserver",
+  "version": "0.0.0",
+  "private": true,
+  "description": "本機 Markdown 目錄 preview server：目錄即 router、檔名即 page，每次 request 即時 render",
+  "scripts": {
+    "dev": "go run .",
+    "test": "go test ./...",
+    "build": "go build -o bin/mdserver .",
+    "deploy": "go install .",
+    "lint": "gofmt -l . && go vet ./...",
+    "clean": "rm -rf bin",
+    "destroy": "pkill -f 'bin/mdserver' || true"
+  }
+}
