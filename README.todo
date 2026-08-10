@@ -1,0 +1,24 @@
+# TODO
+
+> 本清單由 2026-08-10 的 submodule 一致性稽核建立。條目均有可查證的依據，
+> 但`優先序尚未排定` — 請依實際需求增刪。
+
+## 測試 (Testing)
+
+- [ ] `svc/site/` 目前`零測試`，但它承載了整個路由規則與 root 逃逸防護
+      （`ErrOutsideRoot`）。路徑逃逸是安全邊界，應該有測試釘住：
+      `..` 穿越、symlink 指向 root 外、URL 編碼後的 `%2e%2e`。
+- [ ] `svc/server/` 目前`零測試`。至少補上五種 `Target` 種類
+      （PAGE / DIR / STATIC / REDIRECT / NOT_FOUND）各自的 response 分派。
+- [ ] `svc/render/` 只有 `alert_test.go`。`mermaid.go`、`link.go`、`toc.go`
+      三個 AST transformer 都沒有測試，而它們對執行順序敏感
+      （`PRIORITY_TRANSFORM_*`），順序改動不會被任何測試擋下。
+
+## 行為驗證 (Behaviour Verification)
+
+- [ ] `INDEX_FILENAMES` 的優先序（`README.md` → `index.md` → `readme.md` →
+      `Index.md`）在大小寫不敏感的檔案系統（macOS 預設 APFS）上，
+      `readme.md` 與 `README.md` 會撞在一起。需確認實際行為並記入
+      `docs/memory/`。
+- [ ] `PORT_SCAN_LIMIT` 掃完 20 個 port 仍失敗時的錯誤訊息是否足夠明確
+      （是否指出已試過哪些 port）。
