@@ -59,6 +59,11 @@ main  →  server  →  render
 - `資產路徑前綴 _mdserver/`：以底線開頭，確保不會與服務根目錄下的真實資料夾撞名。
 - `HTML 檔原樣輸出`：`.html` / `.htm` 已經是輸出格式，不進 Markdown pipeline、
   不套版型，避免雙重包裝。
+- `TLS 憑證只認一個慣例路徑`：`-tls` 不接受參數，固定讀
+  `~/.config/mdserver/certs/mdserver.{crt,key}` — 也就是區網私有 CA
+  (`platform/inf` 的 `pkg/tls/scripts/issue.sh`) 的固定落點。這讓「零設定」
+  延伸到 HTTPS：不必記路徑，也不必在專案裡放憑證。`-cert` / `-key` 是逃生門，
+  必須成對出現。憑證在 `net.Listen` `之前`載入，路徑錯誤不會留下半開的 listener。
 - `port 自動遞增`：預設 8080，被佔用就往後掃最多 20 個
   (`PORT_SCAN_LIMIT`)，確保零參數情境永遠可用。
 

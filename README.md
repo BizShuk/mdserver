@@ -65,7 +65,20 @@ mdserver -port 3000           # 指定 port
 mdserver -addr 127.0.0.1:3000 # 指定完整位址
 mdserver -title "My Notes"    # 指定站台標題 (預設為目錄名)
 mdserver -quiet               # 只輸出 warning 與 error
+mdserver -tls                 # 走 HTTPS，用區網 CA 簽的憑證
+mdserver -cert a.crt -key a.key  # 走 HTTPS，用指定的憑證
 ```
+
+### HTTPS
+
+`-tls` 不需要參數：它讀取 `~/.config/mdserver/certs/mdserver.{crt,key}`，
+也就是區網私有 CA (`platform/inf` 的 `pkg/tls`) 簽發憑證的固定落點。
+在持有 CA 私鑰的機器上執行 `pkg/tls/scripts/issue.sh mdserver` 產生這一對，
+裝過 `ca.crt` 的 client 即可用 `https://localhost:<port>` 或
+`https://mdserver.local:<port>` 連上而不出現憑證警告。
+
+憑證在`綁定 port 之前`就載入，因此路徑錯誤會立刻失敗，不會留下一個
+半開的 listener。`-cert` 與 `-key` 必須成對出現，並覆蓋 `-tls` 的慣例路徑。
 
 ## 開發 (Dev)
 
