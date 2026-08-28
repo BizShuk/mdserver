@@ -63,7 +63,10 @@ func run() error {
 		tlsFlag   = flag.Bool("tls", false, "serve HTTPS with ~/.config/mdserver/certs/mdserver.{crt,key}")
 		certFlag  = flag.String("cert", "", "TLS certificate file (implies -tls)")
 		keyFlag   = flag.String("key", "", "TLS private key file (implies -tls)")
+
+		excludeFlag multiFlag
 	)
+	flag.Var(&excludeFlag, "exclude", "hide a name at any depth (`skills`, `*.tmp`) or an exact path (`docs/specs`); repeatable")
 	flag.Usage = usage
 	flag.Parse()
 
@@ -86,7 +89,7 @@ func run() error {
 		return err
 	}
 
-	contentSite, err := site.New(root)
+	contentSite, err := site.New(root, excludeFlag)
 	if err != nil {
 		return err
 	}
@@ -123,6 +126,18 @@ func run() error {
 	fmt.Printf("mdserver  serving %s\n          on %s://%s\n", contentSite.Root, scheme, displayAddr(listener.Addr()))
 
 	return serve(httpServer, listener, logger)
+}
+
+// multiFlag collects a flag given more than once. Exclusions are a list and a
+// repeated flag is the shape that keeps every filename intact — a separator
+// would make a name containing it unexpressible.
+type multiFlag []string
+
+func (m *multiFlag) String() string { return strings.Join(*m, ",") }
+
+func (m *multiFlag) Set(value string) error {
+	*m = append(*m, value)
+	return nil
 }
 
 // loadCertificate resolves the pair mdserver should present, returning a nil
@@ -225,6 +240,13 @@ The folder is the router and the filename is the page:
   ./README.md          ->  /
   ./docs/setup.md      ->  /docs/setup
   ./docs/              ->  /docs/   (listing, with docs/README.md on top)
+
+Hiding part of the tree:
+  mdserver -exclude skills -exclude scripts
+                       a bare name matches at any depth and takes its
+                       subtree with it; a name with a slash (docs/specs)
+                       is anchored at the root. Hidden paths are 404 and
+                       absent from every listing.
 
 HTTPS:
   mdserver -tls        uses ~/.config/mdserver/certs/mdserver.{crt,key},

@@ -13,6 +13,7 @@ mdserver/
 │   ├── site/            # 路徑 → 檔案的解析層 (routing)
 │   │   ├── site.go      # Site、Target、Kind；路徑解析與 root 逃逸防護
 │   │   ├── listing.go   # 目錄索引項目列舉
+│   │   ├── exclude.go   # -exclude 樣式編譯與比對
 │   │   ├── pagemeta.go  # 從 frontmatter 取頁面標題/描述
 │   │   └── cache.go     # ttlCache：目錄列舉結果的短期快取
 │   ├── render/          # Markdown → HTML 的轉換層
@@ -64,6 +65,11 @@ main  →  server  →  render
   (`platform/inf` 的 `pkg/tls/scripts/issue.sh`) 的固定落點。這讓「零設定」
   延伸到 HTTPS：不必記路徑，也不必在專案裡放憑證。`-cert` / `-key` 是逃生門，
   必須成對出現。憑證在 `net.Listen` `之前`載入，路徑錯誤不會留下半開的 listener。
+- `排除是 site 層的事`：`-exclude` 的比對全部收在 `svc/site/exclude.go`，
+  由 `Resolve` 與 `Listing` 共用同一份判斷 — 隱藏的東西必須`同時`從路由與索引
+  消失，兩處各判一次就會出現「列得出來但點不進去」。`countPages` 也套用同一組
+  樣式，因為頁數才是決定目錄要不要被列出的依據。
+  這`不違反零設定`：樣式是啟動參數，不是設定檔，且不影響路由規則本身。
 - `port 自動遞增`：預設 8080，被佔用就往後掃最多 20 個
   (`PORT_SCAN_LIMIT`)，確保零參數情境永遠可用。
 

@@ -64,11 +64,18 @@ type Site struct {
 	Root  string
 	Title string
 
+	exclude  exclusions
 	listings *ttlCache[[]Entry]
 }
 
-// New roots a Site at dir, which must exist and be a directory.
-func New(dir string) (*Site, error) {
+// New roots a Site at dir, which must exist and be a directory. exclude hides
+// part of that tree; see exclusions for the pattern shapes.
+func New(dir string, exclude []string) (*Site, error) {
+	hidden, err := newExclusions(exclude)
+	if err != nil {
+		return nil, err
+	}
+
 	abs, err := filepath.Abs(dir)
 	if err != nil {
 		return nil, fmt.Errorf("resolve root %q: %w", dir, err)
@@ -87,18 +94,34 @@ func New(dir string) (*Site, error) {
 	return &Site{
 		Root:     abs,
 		Title:    filepath.Base(abs),
+		exclude:  hidden,
 		listings: newTTLCache[[]Entry](LISTING_CACHE_TTL),
 	}, nil
 }
 
 // Resolve maps a request path to a Target. urlPath is the already-unescaped
 // path from the request.
+//
+// The exclusion check runs on the way out as well as on the way in, because
+// the requested path and the file it lands on are not the same string: `/a`
+// resolves to `a.md`, so a pattern like `*.md` is only visible here.
 func (s *Site) Resolve(urlPath string) (Target, error) {
+	target, err := s.resolve(urlPath)
+	if err != nil {
+		return target, err
+	}
+	if s.exclude.match(target.RelPath) {
+		return Target{Kind: KIND_NOT_FOUND}, nil
+	}
+	return target, nil
+}
+
+func (s *Site) resolve(urlPath string) (Target, error) {
 	trailingSlash := strings.HasSuffix(urlPath, "/")
 	clean := path.Clean("/" + strings.TrimPrefix(urlPath, "/"))
 	rel := strings.TrimPrefix(clean, "/")
 
-	if hasHiddenSegment(rel) {
+	if hasHiddenSegment(rel) || s.exclude.match(rel) {
 		return Target{Kind: KIND_NOT_FOUND}, nil
 	}
 

@@ -65,9 +65,33 @@ mdserver -port 3000           # 指定 port
 mdserver -addr 127.0.0.1:3000 # 指定完整位址
 mdserver -title "My Notes"    # 指定站台標題 (預設為目錄名)
 mdserver -quiet               # 只輸出 warning 與 error
+mdserver -exclude skills      # 隱藏一個名字 (可重複給)
 mdserver -tls                 # 走 HTTPS，用區網 CA 簽的憑證
 mdserver -cert a.crt -key a.key  # 走 HTTPS，用指定的憑證
 ```
+
+### 隱藏部分目錄 (Exclude)
+
+服務根目錄常常就是工作目錄：筆記是網站，但產生筆記的工具也在同一個 checkout 裡。
+`-exclude` 讓那些東西不出現在網站上，而不必把可讀的部分另外複製一份。
+
+```bash
+mdserver -exclude skills -exclude scripts -exclude '*.tmp' -exclude docs/specs
+```
+
+| 樣式 | 意義 |
+| --- | --- |
+| `skills` | 任何深度的同名項目，`連同整個子樹` |
+| `*.tmp` | glob 同樣以`單一路徑片段`比對，任何深度皆適用 |
+| `docs/specs` | 含斜線者`錨定在根目錄`，只比對這一條完整路徑 |
+
+`-exclude` 可重複給，一次一個樣式 — 不用分隔符號，因此檔名含任何字元都表達得出來。
+被排除的路徑一律回 `404`，也不出現在任何目錄索引中；若一個目錄的頁面`全部`被排除，
+該目錄本身也不會被列出，索引不會出現點進去是空的列。
+
+glob 採 `path.Match`，其 `*` `不跨越` `/`：`docs/*` 只是一層，不是整個子樹；
+要排除整個子樹請直接給該目錄名。樣式寫錯 (例如未閉合的 `[`) 在`啟動時`就報錯，
+不會安靜地什麼都不比對。
 
 ### HTTPS
 

@@ -5,6 +5,7 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -61,6 +62,11 @@ func (s *Site) buildListing(target Target) ([]Entry, error) {
 			continue
 		}
 
+		relPath := path.Join(target.RelPath, name)
+		if s.exclude.match(relPath) {
+			continue
+		}
+
 		fsPath := filepath.Join(target.FSPath, name)
 		info, err := dirEntry.Info()
 		if err != nil {
@@ -77,7 +83,7 @@ func (s *Site) buildListing(target Target) ([]Entry, error) {
 
 		switch {
 		case info.IsDir():
-			count, err := countPages(fsPath)
+			count, err := s.countPages(fsPath, relPath)
 			if err != nil {
 				continue
 			}
@@ -123,23 +129,29 @@ func (s *Site) buildListing(target Target) ([]Entry, error) {
 	return entries, nil
 }
 
-// countPages counts the pages under dir, recursively, ignoring hidden
-// directories. HTML files count too, so a directory holding only an export is
-// still listed by its parent.
-func countPages(dir string) (int, error) {
+// countPages counts the pages under dir, recursively, ignoring hidden and
+// excluded entries. HTML files count too, so a directory holding only an
+// export is still listed by its parent. rel is dir relative to the site root,
+// which is what exclusion patterns are written against.
+//
+// The count is what decides whether a directory appears at all, so it has to
+// apply the same exclusions as the listing: otherwise a folder whose every
+// page is hidden still shows up, promising rows it cannot deliver.
+func (s *Site) countPages(dir, rel string) (int, error) {
 	count := 0
 	err := filepath.WalkDir(dir, func(walkPath string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil // an unreadable subtree just contributes nothing
 		}
 		name := d.Name()
+		relPath := path.Join(rel, filepath.ToSlash(strings.TrimPrefix(walkPath, dir+string(filepath.Separator))))
 		if d.IsDir() {
-			if walkPath != dir && strings.HasPrefix(name, ".") {
+			if walkPath != dir && (strings.HasPrefix(name, ".") || s.exclude.match(relPath)) {
 				return fs.SkipDir
 			}
 			return nil
 		}
-		if strings.HasPrefix(name, ".") {
+		if strings.HasPrefix(name, ".") || s.exclude.match(relPath) {
 			return nil
 		}
 		if strings.EqualFold(filepath.Ext(name), MD_EXTENSION) || isHTMLName(name) {

@@ -37,6 +37,12 @@ description: Use when previewing, serving, or locally browsing Markdown director
    | Custom title | `mdserver -title "Project Docs" "$target_dir"` | 使用 automatic port |
    | HTTPS (區網 CA) | `mdserver -tls "$target_dir"` | 讀 `~/.config/mdserver/certs/mdserver.{crt,key}` |
    | HTTPS (指定憑證) | `mdserver -cert a.crt -key a.key "$target_dir"` | 覆蓋慣例路徑，兩者必須成對 |
+   | 隱藏部分目錄 | `mdserver -exclude skills -exclude scripts "$target_dir"` | 排除項回 404 且不入索引 |
+
+   `-exclude` 可重複給，一次一個樣式：不含斜線者比對`單一路徑片段`且適用於任何深度
+   (`skills`、`*.tmp`)，含斜線者`錨定在根目錄` (`docs/specs`)；命中的目錄`連同整個子樹`
+   一起隱藏。當 site root 就是工作目錄 (筆記與產生筆記的工具同一個 checkout) 時用它，
+   不要為了篩選而另外複製一份目錄。
 
    `-port` 會覆蓋 `-addr`。需要 loopback 時只使用完整的 `-addr`，不要同時傳入兩者。
 
@@ -84,3 +90,5 @@ mdserver -addr 127.0.0.1:4317 -title "Project Docs" "$target_dir"
 - 只看到 process running 就宣稱成功，沒有用 HTTP request 驗證 rendered site。
 - 在 HTTPS 模式下仍用 `http://` 連線，把 `client sent an HTTP request to an HTTPS server` 誤判成 server 壞掉。
 - 只給 `-cert` 沒給 `-key`（或反過來），mdserver 會直接拒絕啟動。
+- 以為 `-exclude docs/*` 能排掉整個子樹；`path.Match` 的 `*` 不跨 `/`，要排子樹請直接給目錄名。
+- 用逗號串接多個排除樣式；`-exclude` 只吃`一個`樣式，多個就重複給。
