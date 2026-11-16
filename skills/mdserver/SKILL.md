@@ -1,6 +1,8 @@
 ---
 name: mdserver
 description: Use when previewing, serving, or locally browsing Markdown directories with mdserver, especially when selecting a port, binding address, site root, or title, or diagnosing port conflicts and stale installed binaries.
+metadata:
+    source: https://github.com/BizShuk/mdserver
 ---
 
 # mdserver
