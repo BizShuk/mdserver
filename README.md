@@ -110,7 +110,7 @@ glob 採 `path.Match`，其 `*` `不跨越` `/`：`docs/*` 只是一層，不是
 npm run dev     # go run .
 npm test        # go test ./...
 npm run build   # go build -o bin/mdserver .
-npm run deploy  # go install .
+npm run install # go install .
 npm run lint    # gofmt -l . && go vet ./...
 ```
 
